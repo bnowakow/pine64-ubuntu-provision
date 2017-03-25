@@ -1,0 +1,43 @@
+pine64 provision
+
+remote@ubuntu:
+sudo sudo groupadd -g 501 sup
+sudo useradd -m -d /home/sup -s /bin/bash -u 501 -g 501 sup
+sudo passwd sup
+sudo sudo groupadd admin
+sudo usermod -a -G admin sup
+
+remote@sup:
+# kill -9 bash might be needed before userdel
+sudo userdel ubuntu
+sudo apt update
+sudo apt -y install locate vim screen htop
+sudo /usr/local/sbin/resize_rootfs.sh
+sudo reboot
+sudo /usr/local/sbin/install_mate_desktop.sh
+
+sudo apt -y install apt-transport-https binutils
+wget -O - https://dev2day.de/pms/dev2day-pms.gpg.key | sudo apt-key add -
+echo "deb [arch=armhf] https://dev2day.de/pms/ jessie main" | sudo tee /etc/apt/sources.list.d/pms.list
+sudo dpkg --add-architecture armhf
+sudo apt update
+sudo apt -y install plexmediaserver-installer:armhf
+sudo service plexmediaserver restart
+sudo apt -y install mkvtoolnix
+sudo apt upgrade
+sudo apt -y install cifs-utils
+echo "//192.168.0.1/Store-Small       /media/Airport-Store-Small      cifs    username=sup,password=HFNKc7rZEAWUv6,uid=501,sec=ntlm   0 0" | sudo tee -a /etc/fstab
+sudo mkdir -p /media/Airport-Store-Small
+sudo chown sup:sup /media/Airport-Store-Small
+sudo mount /media/Airport-Store-Small
+
+# http://www.htpcguides.com/fix-plex-server-is-not-powerful-enough-on-raspberry-pi-2/
+
+
+#TODO:
+locale
+wifi
+
+local:
+ssh-copy-id 192.168.0.245
+open http://192.168.0.245:32400/web
