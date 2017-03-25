@@ -28,6 +28,24 @@
     shell: usermod -a -G admin {{username}}
     become: true
 
+  # TODO temporarily here - it should be moved (despite last task) to separate file. I've put it here to not mess with ssh keys for new user as a shortcut
+  - name: update sources list for package manager
+    shell: apt update
+    become: true
+
+  - name: install locate, vim, screen, htop
+    shell: apt -y install locate vim screen htop
+    become: true
+
+  - name: resize rootfs to take use of whole sd card
+    shell: /usr/local/sbin/resize_rootfs.sh
+    become: true
+
+  # # TODO figure out if reboot is needed after resize
+  # - name: install graphical interface
+  #   shell: /usr/local/sbin/install_mate_desktop.sh
+  #   become: true
+
   # TODO kill processes by ubuntu just in case (i.e. manual loging into console)
   - name: delete default ubuntu user as it has default password
     shell: userdel ubuntu
