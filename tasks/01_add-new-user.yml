@@ -1,0 +1,34 @@
+- hosts: pine64
+  remote_user: ubuntu
+  vars:
+    username: sup
+
+  vars_prompt:
+    - name: password
+    prompt: "set new password for newly created user"
+
+  tasks:
+  - name: add group for user
+    shell: groupadd -g 501 {{username}}
+    become: true
+
+  - name: add user
+    shell: useradd -m -d /home/{{username}} -s /bin/bash -u 501 -g 501 {{username}}
+    become: true
+
+  - name: set password for user
+    shell: 'printf "%s\n" {{password}} {{password}} | passwd {{username}}'
+    become: true
+
+  - name: add admin group for sudo purposes
+    shell: groupadd admin
+    become: true
+
+  - name: add newly created user to admin group
+    shell: usermod -a -G admin {{username}}
+    become: true
+
+  # TODO kill processes by ubuntu just in case (i.e. manual loging into console)
+  - name: delete default ubuntu user as it has default password
+    shell: userdel ubuntu
+    become: true
