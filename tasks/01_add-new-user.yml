@@ -5,7 +5,9 @@
 
   vars_prompt:
     - name: password
-    prompt: "set new password for newly created user"
+      prompt: "set new password for newly created user"
+    - name: nas_password
+      prompt: "what's your nas (samba) password?"
 
   tasks:
   - name: add group for user
@@ -29,6 +31,7 @@
     become: true
 
   # TODO temporarily here - it should be moved (despite last task) to separate file. I've put it here to not mess with ssh keys for new user as a shortcut
+
   - name: update sources list for package manager
     shell: apt update
     become: true
@@ -37,16 +40,74 @@
     shell: apt -y install locate vim screen htop
     become: true
 
+  # TODO figure out if reboot is needed after resize
   - name: resize rootfs to take use of whole sd card
     shell: /usr/local/sbin/resize_rootfs.sh
     become: true
 
-  # # TODO figure out if reboot is needed after resize
-  # - name: install graphical interface
-  #   shell: /usr/local/sbin/install_mate_desktop.sh
-  #   become: true
+  - name: install graphical interface
+    shell: /usr/local/sbin/install_mate_desktop.sh
+    become: true
+
+  - name: install apt-transport-https binutils
+    shell: apt -y install apt-transport-https binutils
+    become: true
+
+  - name: add dev2day.de key to apt
+    shell: wget -O - https://dev2day.de/pms/dev2day-pms.gpg.key | apt-key add -
+    become: true
+
+  - name: add dev2day.de repo to apt
+    shell: echo "deb [arch=armhf] https://dev2day.de/pms/ jessie main" | tee /etc/apt/sources.list.d/pms.list
+    become: true
+
+  - name: add armhf architecture to dpkg
+    shell: dpkg --add-architecture armhf
+    become: true
+
+  - name: update sources list for package manager
+    shell: apt update
+    become: true
+
+  - name: install plexmediaserver
+    shell: apt -y install plexmediaserver-installer:armhf
+    become: true
+
+  - name: restart plexmediaserver service
+    shell: service plexmediaserver restart
+    become: true
+
+  - name: install mkvtoolnix cifs-utils
+    shell: apt -y install mkvtoolnix cifs-utils
+    become: true
+
+  # TODO add parameters and ask user for password
+  - name: add samba mount to NAS
+    shell: echo "//192.168.0.1/Store-Small       /media/Airport-Store-Small      cifs    username={{username}},password={{nas_password}},uid=501,sec=ntlm   0 0" | tee -a /etc/fstab
+    become: true
+
+  - name: create directory for samba mount
+    shell: mkdir -p /media/Airport-Store-Small
+    become: true
+
+  - name: change owner of samba mount
+    shell: chown {{username}}:{{username}} /media/Airport-Store-Small
+    become: true
+
+  - name: mount samba mount
+    shell: mount /media/Airport-Store-Small
+    become: true
 
   # TODO kill processes by ubuntu just in case (i.e. manual loging into console)
-  - name: delete default ubuntu user as it has default password
-    shell: userdel ubuntu
-    become: true
+  # - name: delete default ubuntu user as it has default password
+  #   shell: userdel ubuntu
+  #   become: true
+
+# TODO console-setup displays ncurses dialog waits for user submision despite -y ;/
+  # - name: upgrade packages
+  #   shell: apt -y upgrade
+  #   become: true
+
+  # - name: reboot after changes
+  #   shell: reboot
+  #   become: true
